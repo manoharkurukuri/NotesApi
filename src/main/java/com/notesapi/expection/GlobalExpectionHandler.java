@@ -1,0 +1,53 @@
+package com.notesapi.expection;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestControllerAdvice
+@Slf4j
+public class GlobalExpectionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String,Object>> handleValidationException(MethodArgumentNotValidException ex){
+        log.info("Inside GlobalExpectionHandler class , handleValidationException() {}:",ex);
+        Map<String,String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach(error->{
+            String fieldName = ((FieldError)error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName,errorMessage);
+        });
+
+        Map<String,Object> response = new HashMap<>();
+        response.put("message","Validation Failed");
+        response.put("error",errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+
+    }
+
+    @ExceptionHandler(ResourceExistException.class)
+    public ResponseEntity<Map<String,Object>> handleResourceException(ResourceExistException ex){
+        log.info("Inside GlobalExpectionHandler class , handleResourceException() {}:",ex);
+
+        Map<String,Object> response = new HashMap<>();
+        response.put("message","Resource Exist");
+        response.put("error",ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String,Object>>  handleGenericExpection(Exception ex){
+        log.info("Inside GlobalExpectionHandler class , handleGenericExpection() {}:",ex);
+        Map<String,Object> response = new HashMap<>();
+        response.put("message","Something went wrong");
+        response.put("error",ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
